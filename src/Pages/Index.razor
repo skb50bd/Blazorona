@@ -1,0 +1,147 @@
+﻿@page "/"
+@inject HttpClient Http
+@using Newtonsoft.Json
+@using System.Timers
+
+<div class="header">
+    <div class="banner">
+        COVID-19 CoronaVirus Pandemic
+    </div>
+    <div class="update-message">
+        Last updated: @overview._Updated GMT
+    </div>
+</div>
+
+<div class="jumbo">
+    <div class="cases-title">
+        Coronavirus Cases:
+    </div>
+    <div class="cases-count">
+        @overview._Cases
+    </div>
+    <div class="death-title">
+        Deaths:
+    </div>
+    <div class="death-count">
+        @overview._Deaths
+    </div>
+    <div class="recovered-title">
+        Recovered:
+    </div>
+    <div class="recovered-count">
+        @overview._Recovered
+    </div>
+</div>
+
+<div class="details row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Active Cases
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12 card-number">
+                        <span class="active-count">
+                            @overview._Active
+                        </span>
+                        <span class="active-description">
+                            Currently infected patients
+                        </span>
+                    </div>
+                    <div class="col-6">
+                        <span class="mild-count">
+                            @all._Mild
+                        </span>
+                        <span class="mild-percent">
+                            (@all._MildPercent)
+                        </span>
+                        <span class="desc">
+                            in Mild Condition
+                        </span>
+                    </div>
+                    <div class="col-6">
+                        <span class="critical-count">
+                            @all._Critical
+                        </span>
+                        <span class="critical-percent">
+                            (@all._CriticalPercent)
+                        </span>
+                        <span class="desc">
+                            Serious or Critical
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Closed Cases
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12 card-number">
+                        <span class="closed-count">
+                            @overview._Closed
+                        </span>
+                        <span class="closed-description">
+                            Cases which had an outcome
+                        </span>
+                    </div>
+                    <div class="col-6">
+                        <span class="recovered-count-2">
+                            @all._TotalRecovered
+                        </span>
+                        <span class="recovered-percent">
+                            (@all._RecoveredPercent)
+                        </span>
+                        <span class="desc">
+                            Recovered / Discharged
+                        </span>
+                    </div>
+                    <div class="col-6">
+                        <span class="death-count-2">
+                            @all._TotalDeaths
+                        </span>
+                        <span class="death-percent">
+                            (@all._DeathPercent)
+                        </span>
+                        <span class="desc">
+                            Deaths
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Data overview { get; set; } = new Data();
+    private AllCountryData all { get; set; } = new AllCountryData();
+    private CountryData BD { get; set; } = new CountryData();
+
+    private Timer timer { get; set; } 
+
+    protected override void OnInitialized()
+    {
+        UpdateCounts();
+        timer = new Timer(30000);
+        timer.Elapsed += UpdateCounts;
+        timer.Start();
+    }
+
+    private async void UpdateCounts(
+        object sender = null, 
+        ElapsedEventArgs args = null) {
+        var text = await Http.GetStringAsync("https://corona.lmao.ninja/all");
+        overview = JsonConvert.DeserializeObject<Data>(text);
+
+        text = await Http.GetStringAsync("https://corona.lmao.ninja/countries");
+        var countries = JsonConvert.DeserializeObject<CountryData[]>(text);
+        all = new AllCountryData(countries);
+        StateHasChanged();
+    }
+}
